@@ -285,21 +285,6 @@ export default function LearnModePage() {
   const totalCorrect = learnSession.learnProgress?.reduce((sum, p) => sum + p.totalCorrect, 0) || 0;
   const totalIncorrect = learnSession.learnProgress?.reduce((sum, p) => sum + p.totalIncorrect, 0) || 0;
 
-  if (sessionState === 'complete' || isComplete) {
-    return (
-      <LearnComplete
-        studySetId={id}
-        studySetTitle={(learnSession as any).studySet?.title || 'Study Set'}
-        totalCards={totalCards}
-        totalCorrect={totalCorrect}
-        totalIncorrect={totalIncorrect}
-        wrongCardIds={wrongCardIds}
-        onRestart={handleRestart}
-        onReviewWrong={handleReviewWrong}
-      />
-    );
-  }
-
   if (!currentProgress || !currentProgress.flashcard) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800">
