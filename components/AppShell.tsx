@@ -57,7 +57,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       {/* Main content area */}
       <div className="flex flex-col flex-1 overflow-hidden">
         {/* Header - only spans main content area */}
-        <Header showSidebar={showSidebar && !isFocusMode} />
+        <Header showSidebar={!!(showSidebar && !isFocusMode)} />
         
         {/* Main content */}
         <main className="flex-1 overflow-y-auto">
