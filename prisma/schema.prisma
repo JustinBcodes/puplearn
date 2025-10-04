@@ -1,0 +1,119 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String         @id @default(cuid())
+  name          String?
+  email         String         @unique
+  passwordHash  String
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  studySets     StudySet[]
+  studySessions StudySession[]
+  learnSessions LearnSession[]
+  folders       Folder[]
+}
+
+model StudySet {
+  id            String         @id @default(cuid())
+  title         String
+  description   String?
+  userId        String
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  folderId      String?
+  folder        Folder?        @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  isFavorite    Boolean        @default(false)
+  lastAccessed  DateTime?
+  flashcards    Flashcard[]
+  studySessions StudySession[]
+  learnSessions LearnSession[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model Flashcard {
+  id             String          @id @default(cuid())
+  question       String
+  answer         String
+  studySetId     String
+  studySet       StudySet        @relation(fields: [studySetId], references: [id], onDelete: Cascade)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  sessionResults SessionResult[]
+  learnProgress  LearnProgress[]
+}
+
+model StudySession {
+  id             String          @id @default(cuid())
+  userId         String
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  studySetId     String
+  studySet       StudySet        @relation(fields: [studySetId], references: [id], onDelete: Cascade)
+  totalCards     Int
+  correctCards   Int
+  wrongCards     Int
+  createdAt      DateTime        @default(now())
+  sessionResults SessionResult[]
+}
+
+model SessionResult {
+  id             String       @id @default(cuid())
+  studySessionId String
+  studySession   StudySession @relation(fields: [studySessionId], references: [id], onDelete: Cascade)
+  flashcardId    String
+  flashcard      Flashcard    @relation(fields: [flashcardId], references: [id], onDelete: Cascade)
+  isCorrect      Boolean
+  createdAt      DateTime     @default(now())
+}
+
+model LearnSession {
+  id            String          @id @default(cuid())
+  userId        String
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  studySetId    String
+  studySet      StudySet        @relation(fields: [studySetId], references: [id], onDelete: Cascade)
+  isCompleted   Boolean         @default(false)
+  masteryGoal   Int             @default(2)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  learnProgress LearnProgress[]
+}
+
+model LearnProgress {
+  id              String       @id @default(cuid())
+  sessionId       String
+  session         LearnSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  flashcardId     String
+  flashcard       Flashcard    @relation(fields: [flashcardId], references: [id], onDelete: Cascade)
+  correctStreak   Int          @default(0)
+  totalCorrect    Int          @default(0)
+  totalIncorrect  Int          @default(0)
+  mastered        Boolean      @default(false)
+  lastSeen        DateTime?
+  priority        Int          @default(100)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@unique([sessionId, flashcardId])
+}
+
+model Folder {
+  id            String     @id @default(cuid())
+  name          String
+  userId        String
+  user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parentId      String?
+  parent        Folder?    @relation("FolderHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children      Folder[]   @relation("FolderHierarchy")
+  studySets     StudySet[]
+  position      Int        @default(0)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+}
+
