@@ -15,11 +15,6 @@ interface LearnModeCardProps {
   isLastCard: boolean;
 }
 
-interface MultipleChoiceOption {
-  text: string;
-  isCorrect: boolean;
-}
-
 export default function LearnModeCard({
   card,
   allFlashcards,
@@ -30,54 +25,51 @@ export default function LearnModeCard({
   onComplete,
   isLastCard,
 }: LearnModeCardProps) {
-  const [options, setOptions] = useState<MultipleChoiceOption[]>([]);
-  const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
-  const [showFeedback, setShowFeedback] = useState(false);
-  const [isCorrect, setIsCorrect] = useState(false);
+  const [isFlipped, setIsFlipped] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
+  // Reset flip state when card changes
   useEffect(() => {
-    generateOptions();
-    setSelectedAnswer(null);
-    setShowFeedback(false);
+    setIsFlipped(false);
+    setIsProcessing(false);
   }, [card.id]);
 
-  const generateOptions = () => {
-    const correctAnswer = card.answer;
-    
-    const otherCards = allFlashcards.filter(c => c.id !== card.id);
-    
-    if (otherCards.length === 0) {
-      setOptions([{ text: correctAnswer, isCorrect: true }]);
-      return;
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      // Only allow keyboard shortcuts after card is flipped
+      if (!isFlipped || isProcessing) return;
+
+      if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        handleAnswer(true);
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        handleAnswer(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isFlipped, isProcessing]);
+
+  const handleFlip = () => {
+    if (!isProcessing) {
+      setIsFlipped(!isFlipped);
     }
-    
-    const shuffledOthers = [...otherCards].sort(() => Math.random() - 0.5);
-    
-    const numDistractors = Math.min(3, otherCards.length);
-    const distractors = shuffledOthers.slice(0, numDistractors).map(c => c.answer);
-    
-    const allOptions: MultipleChoiceOption[] = [
-      { text: correctAnswer, isCorrect: true },
-      ...distractors.map(d => ({ text: d, isCorrect: false })),
-    ];
-    
-    const shuffledOptions = allOptions.sort(() => Math.random() - 0.5);
-    
-    setOptions(shuffledOptions);
   };
 
-  const handleOptionClick = (option: MultipleChoiceOption) => {
-    if (showFeedback) return;
+  const handleAnswer = async (isCorrect: boolean) => {
+    if (isProcessing || !isFlipped) return;
     
-    setSelectedAnswer(option.text);
-    setIsCorrect(option.isCorrect);
-    setShowFeedback(true);
+    setIsProcessing(true);
     
+    // Small delay for visual feedback
     setTimeout(() => {
-      onAnswer(option.isCorrect);
-      setShowFeedback(false);
-      setSelectedAnswer(null);
-    }, 1800);
+      onAnswer(isCorrect);
+      setIsProcessing(false);
+    }, 300);
   };
 
   const progressPercent = totalCards > 0 ? Math.round((masteredCount / totalCards) * 100) : 0;
@@ -92,23 +84,24 @@ export default function LearnModeCard({
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 dark:from-slate-900 dark:to-slate-950 p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 dark:from-[#0a1128] dark:to-[#0a1128] p-4">
       <div className="max-w-3xl mx-auto pt-8 pb-4">
         <button
           onClick={onComplete}
-          className="text-gray-600 dark:text-slate-400 hover:text-gray-800 dark:hover:text-teal-300 font-medium mb-4 flex items-center gap-2 transition-colors"
+          className="text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-teal-300 font-medium mb-4 flex items-center gap-2 transition-colors"
         >
           <span>←</span>
           <span>Back to Study Set</span>
         </button>
       </div>
       <div className="w-full max-w-3xl mx-auto">
+        {/* Progress Bar */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-700 dark:text-slate-300">
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
               {masteredCount} of {totalCards} mastered
             </span>
-            <span className="text-sm font-medium text-gray-700 dark:text-slate-300">
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
               {progressPercent}%
             </span>
           </div>
@@ -120,102 +113,115 @@ export default function LearnModeCard({
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-8 md:p-12 mb-6 border-2 border-primary-200 dark:border-slate-700">
-          <div className="mb-6">
-            <span className="text-sm text-primary-600 dark:text-teal-300 font-semibold uppercase tracking-wide">
-              Question
-            </span>
-            {progress.totalIncorrect > 0 && !progress.mastered && (
-              <span className="ml-3 text-xs bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200 px-2 py-1 rounded">
-                Needs practice
-              </span>
-            )}
-            {progress.correctStreak > 0 && !progress.mastered && (
-              <span className="ml-3 text-xs bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 px-2 py-1 rounded">
-                Streak: {progress.correctStreak}
-              </span>
-            )}
-          </div>
-          
-          <p className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-slate-100 mb-8 leading-relaxed">
-            {card.question}
-          </p>
-
-          <div className="space-y-3">
-            {options.map((option, index) => {
-              const isSelected = selectedAnswer === option.text;
-              const showAsCorrect = showFeedback && option.isCorrect;
-              const showAsWrong = showFeedback && isSelected && !option.isCorrect;
-              
-              return (
-                <button
-                  key={index}
-                  onClick={() => handleOptionClick(option)}
-                  disabled={showFeedback}
-                  className={`w-full p-4 rounded-lg border-2 text-left transition-all font-medium text-lg
-                    ${showFeedback ? 'cursor-default' : 'cursor-pointer hover:border-primary-400 dark:hover:border-teal-500 hover:bg-primary-50 dark:hover:bg-slate-700'}
-                    ${showAsCorrect ? 'bg-green-100 dark:bg-green-900/30 border-green-500 dark:border-green-600' : ''}
-                    ${showAsWrong ? 'bg-red-100 dark:bg-red-900/30 border-red-500 dark:border-red-600' : ''}
-                    ${!showFeedback ? 'bg-white dark:bg-slate-700 border-gray-300 dark:border-slate-600' : ''}
-                    ${showFeedback && !showAsCorrect && !showAsWrong ? 'opacity-50 border-gray-300 dark:border-slate-600 bg-gray-50 dark:bg-slate-700' : ''}
-                  `}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-800 dark:text-slate-100 pr-4">{option.text}</span>
-                    {showAsCorrect && <span className="text-2xl">✅</span>}
-                    {showAsWrong && <span className="text-2xl">❌</span>}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-
-          {showFeedback && (
-            <div className="mt-6 animate-fadeIn">
-              <div
-                className={`p-4 rounded-lg border-2 ${
-                  isCorrect
-                    ? 'bg-green-50 dark:bg-green-900/20 border-green-500 dark:border-green-700'
-                    : 'bg-red-50 dark:bg-red-900/20 border-red-500 dark:border-red-700'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl">{isCorrect ? '✅' : '❌'}</span>
-                  <div>
-                    <span
-                      className={`font-bold text-lg ${
-                        isCorrect
-                          ? 'text-green-800 dark:text-green-200'
-                          : 'text-red-800 dark:text-red-200'
-                      }`}
-                    >
-                      {isCorrect ? 'Correct!' : 'Not quite'}
-                    </span>
-                    {isCorrect && progress.correctStreak + 1 >= 2 && !progress.mastered && (
-                      <p className="text-green-700 dark:text-green-300 text-sm mt-1">
-                        🎉 You&apos;re mastering this card!
-                      </p>
-                    )}
-                    {!isCorrect && (
-                      <p className="text-red-700 dark:text-red-300 text-sm mt-1">
-                        Correct answer: <span className="font-semibold">{card.answer}</span>
-                      </p>
-                    )}
-                  </div>
-                </div>
+        {/* Flashcard */}
+        <div 
+          onClick={handleFlip}
+          className={`relative min-h-[400px] cursor-pointer mb-6 transition-transform duration-300 hover:scale-[1.02] ${isProcessing ? 'pointer-events-none' : ''}`}
+          style={{ perspective: '1000px' }}
+        >
+          <div
+            className={`relative w-full min-h-[400px] transition-all duration-500 ${
+              isFlipped ? '[transform:rotateY(180deg)]' : ''
+            }`}
+            style={{ transformStyle: 'preserve-3d' }}
+          >
+            {/* Front of card (Question) */}
+            <div
+              className={`absolute inset-0 bg-white dark:bg-[#152850] rounded-2xl shadow-2xl p-8 md:p-12 border-2 border-blue-200 dark:border-blue-900 flex flex-col justify-center items-center ${
+                isFlipped ? 'invisible' : ''
+              }`}
+              style={{ backfaceVisibility: 'hidden' }}
+            >
+              <div className="mb-6 text-center">
+                <span className="text-sm text-blue-600 dark:text-teal-300 font-semibold uppercase tracking-wide">
+                  Question
+                </span>
+                {progress.totalIncorrect > 0 && !progress.mastered && (
+                  <span className="ml-3 text-xs bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200 px-2 py-1 rounded">
+                    Needs practice
+                  </span>
+                )}
+                {progress.correctStreak > 0 && !progress.mastered && (
+                  <span className="ml-3 text-xs bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 px-2 py-1 rounded">
+                    Streak: {progress.correctStreak}
+                  </span>
+                )}
               </div>
+              
+              <p className="text-2xl md:text-4xl font-bold text-gray-800 dark:text-gray-100 text-center leading-relaxed mb-8">
+                {card.question}
+              </p>
+
+              <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
+                Click to reveal answer
+              </p>
             </div>
-          )}
+
+            {/* Back of card (Answer) */}
+            <div
+              className={`absolute inset-0 bg-gradient-to-br from-blue-500 to-purple-500 dark:from-teal-600 dark:to-blue-700 rounded-2xl shadow-2xl p-8 md:p-12 border-2 border-blue-300 dark:border-teal-700 flex flex-col justify-center items-center ${
+                !isFlipped ? 'invisible' : ''
+              }`}
+              style={{ 
+                backfaceVisibility: 'hidden',
+                transform: 'rotateY(180deg)'
+              }}
+            >
+              <div className="mb-6 text-center">
+                <span className="text-sm text-white font-semibold uppercase tracking-wide">
+                  Answer
+                </span>
+              </div>
+              
+              <p className="text-2xl md:text-4xl font-bold text-white text-center leading-relaxed mb-8">
+                {card.answer}
+              </p>
+
+              <p className="text-sm text-white/80 text-center">
+                Did you get it right?
+              </p>
+            </div>
+          </div>
         </div>
 
+        {/* Right/Wrong Buttons (only show when flipped) */}
+        {isFlipped && (
+          <div className="flex gap-4 mb-6 animate-fadeIn">
+            <button
+              onClick={() => handleAnswer(false)}
+              disabled={isProcessing}
+              className="flex-1 bg-red-500 hover:bg-red-600 disabled:bg-red-400 text-white font-bold py-6 px-8 rounded-xl transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-3 text-lg"
+            >
+              <span className="text-2xl">❌</span>
+              <div className="text-left">
+                <div>Wrong</div>
+                <div className="text-xs opacity-80">← or Left Arrow</div>
+              </div>
+            </button>
+            
+            <button
+              onClick={() => handleAnswer(true)}
+              disabled={isProcessing}
+              className="flex-1 bg-green-500 hover:bg-green-600 disabled:bg-green-400 text-white font-bold py-6 px-8 rounded-xl transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-3 text-lg"
+            >
+              <div className="text-right">
+                <div>Right</div>
+                <div className="text-xs opacity-80">→ or Right Arrow</div>
+              </div>
+              <span className="text-2xl">✅</span>
+            </button>
+          </div>
+        )}
+
+        {/* Encouragement */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <CorgiMascot size={50} />
-            <p className="text-sm text-gray-600 dark:text-slate-400">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
               {getEncouragementMessage()}
             </p>
           </div>
-          <p className="text-xs text-gray-500 dark:text-slate-500">
+          <p className="text-xs text-gray-500 dark:text-gray-500">
             {2 - progress.correctStreak > 0 ? (
               `${2 - progress.correctStreak} more correct to master`
             ) : (

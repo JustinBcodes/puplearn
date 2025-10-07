@@ -252,10 +252,10 @@ export default function LearnModePage() {
 
   if (status === 'loading' || sessionState === 'loading') {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800">
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 dark:from-[#0a1128] dark:to-[#0a1128]">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Loading Learn Mode...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-teal-500 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-300">Loading Learn Mode...</p>
         </div>
       </div>
     );
@@ -263,14 +263,14 @@ export default function LearnModePage() {
 
   if (!learnSession || !learnSession.learnProgress || learnSession.learnProgress.length === 0) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800">
-        <div className="text-center max-w-md p-8 bg-white dark:bg-gray-800 rounded-2xl shadow-xl">
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 dark:from-[#0a1128] dark:to-[#0a1128]">
+        <div className="text-center max-w-md p-8 bg-white dark:bg-[#152850] rounded-2xl shadow-xl border border-blue-200 dark:border-blue-900">
           <p className="text-xl text-gray-700 dark:text-gray-300 mb-6">
             No flashcards available for learning.
           </p>
           <button
             onClick={() => router.push(`/study-sets/${id}`)}
-            className="bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
+            className="bg-blue-600 hover:bg-blue-700 dark:bg-teal-600 dark:hover:bg-teal-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
           >
             Return to Study Set
           </button>
@@ -287,14 +287,14 @@ export default function LearnModePage() {
 
   if (!currentProgress || !currentProgress.flashcard) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800">
-        <div className="text-center max-w-md p-8 bg-white dark:bg-gray-800 rounded-2xl shadow-xl">
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 dark:from-[#0a1128] dark:to-[#0a1128]">
+        <div className="text-center max-w-md p-8 bg-white dark:bg-[#152850] rounded-2xl shadow-xl border border-blue-200 dark:border-blue-900">
           <p className="text-xl text-gray-700 dark:text-gray-300 mb-6">
             Unable to load the next flashcard.
           </p>
           <button
             onClick={() => router.push(`/study-sets/${id}`)}
-            className="bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
+            className="bg-blue-600 hover:bg-blue-700 dark:bg-teal-600 dark:hover:bg-teal-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
           >
             Return to Study Set
           </button>
@@ -306,10 +306,10 @@ export default function LearnModePage() {
   const isLastCard = masteredCount === totalCards - 1 && !currentProgress.mastered;
 
   const loadingFallback = (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800">
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 dark:from-[#0a1128] dark:to-[#0a1128]">
       <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
-        <p className="text-gray-600 dark:text-gray-400">Loading...</p>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-teal-500 mx-auto mb-4"></div>
+        <p className="text-gray-600 dark:text-gray-300">Loading...</p>
       </div>
     </div>
   );
