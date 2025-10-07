@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Flashcard, LearnProgress } from '@/lib/types';
 import CorgiMascot from './CorgiMascot';
 
@@ -34,10 +35,42 @@ export default function LearnModeCard({
     setIsProcessing(false);
   }, [card.id]);
 
-  // Keyboard shortcuts
+  const handleFlip = useCallback(() => {
+    if (!isProcessing) {
+      setIsFlipped((prev) => !prev);
+    }
+  }, [isProcessing]);
+
+  const handleAnswer = useCallback(async (isCorrect: boolean) => {
+    if (isProcessing || !isFlipped) return;
+    
+    setIsProcessing(true);
+    
+    // Minimal delay for smooth transition
+    setTimeout(() => {
+      onAnswer(isCorrect);
+      setIsProcessing(false);
+    }, 200);
+  }, [isProcessing, isFlipped, onAnswer]);
+
+  // Comprehensive keyboard shortcuts
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
-      // Only allow keyboard shortcuts after card is flipped
+      // Prevent if user is typing in an input
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+
+      // Spacebar to flip
+      if (e.code === 'Space' || e.key === ' ') {
+        e.preventDefault();
+        if (!isProcessing) {
+          handleFlip();
+        }
+        return;
+      }
+
+      // Arrow keys only work after card is flipped
       if (!isFlipped || isProcessing) return;
 
       if (e.key === 'ArrowRight') {
@@ -51,36 +84,17 @@ export default function LearnModeCard({
 
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isFlipped, isProcessing]);
-
-  const handleFlip = () => {
-    if (!isProcessing) {
-      setIsFlipped(!isFlipped);
-    }
-  };
-
-  const handleAnswer = async (isCorrect: boolean) => {
-    if (isProcessing || !isFlipped) return;
-    
-    setIsProcessing(true);
-    
-    // Small delay for visual feedback
-    setTimeout(() => {
-      onAnswer(isCorrect);
-      setIsProcessing(false);
-    }, 300);
-  };
+  }, [isFlipped, isProcessing, handleFlip, handleAnswer]);
 
   const progressPercent = totalCards > 0 ? Math.round((masteredCount / totalCards) * 100) : 0;
 
   const getEncouragementMessage = () => {
-    if (masteredCount === 0) return "Let's get started! 🐶";
-    if (progressPercent < 25) return "Great start! Keep going! 🐾";
-    if (progressPercent < 50) return "You're doing amazing! 🌟";
-    if (progressPercent < 75) return "More than halfway there! 💪";
-    if (progressPercent < 100) return "Almost there! You've got this! 🎯";
-    return "Perfect! All mastered! 🎉";
+    if (masteredCount === 0) return "Let's get started!";
+    if (progressPercent < 25) return "Great start! Keep going!";
+    if (progressPercent < 50) return "You're doing amazing!";
+    if (progressPercent < 75) return "More than halfway there!";
+    if (progressPercent < 100) return "Almost there! You've got this!";
+    return "Perfect! All mastered!";
   };
 
   return (
@@ -96,7 +110,12 @@ export default function LearnModeCard({
       </div>
       <div className="w-full max-w-3xl mx-auto">
         {/* Progress Bar */}
-        <div className="mb-6">
+        <motion.div 
+          className="mb-6"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+        >
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
               {masteredCount} of {totalCards} mastered
@@ -106,31 +125,46 @@ export default function LearnModeCard({
             </span>
           </div>
           <div className="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-3 overflow-hidden">
-            <div
-              className="bg-gradient-to-r from-blue-500 to-purple-500 dark:from-teal-500 dark:to-teal-600 h-full transition-all duration-500 ease-out"
-              style={{ width: `${progressPercent}%` }}
+            <motion.div
+              className="bg-gradient-to-r from-blue-500 to-purple-500 dark:from-teal-500 dark:to-teal-600 h-full"
+              initial={{ width: 0 }}
+              animate={{ width: `${progressPercent}%` }}
+              transition={{ duration: 0.5, ease: 'easeOut' }}
             />
           </div>
-        </div>
+        </motion.div>
 
-        {/* Flashcard */}
+        {/* Flashcard - Framer Motion Implementation */}
         <div 
           onClick={handleFlip}
-          className={`relative min-h-[400px] cursor-pointer mb-6 transition-transform duration-300 hover:scale-[1.02] ${isProcessing ? 'pointer-events-none' : ''}`}
-          style={{ perspective: '1000px' }}
+          className={`relative mb-6 ${isProcessing ? 'pointer-events-none' : 'cursor-pointer'}`}
+          style={{ perspective: '1500px', minHeight: '400px' }}
         >
-          <div
-            className={`relative w-full min-h-[400px] transition-all duration-500 ${
-              isFlipped ? '[transform:rotateY(180deg)]' : ''
-            }`}
-            style={{ transformStyle: 'preserve-3d' }}
+          <motion.div
+            className="relative w-full"
+            style={{ 
+              transformStyle: 'preserve-3d',
+              minHeight: '400px'
+            }}
+            animate={{ rotateY: isFlipped ? 180 : 0 }}
+            transition={{ 
+              duration: 0.25, 
+              ease: [0.4, 0, 0.2, 1],
+              type: 'spring',
+              stiffness: 300,
+              damping: 30
+            }}
+            whileHover={{ scale: isProcessing ? 1 : 1.02 }}
           >
             {/* Front of card (Question) */}
-            <div
-              className={`absolute inset-0 bg-white dark:bg-[#152850] rounded-2xl shadow-2xl p-8 md:p-12 border-2 border-blue-200 dark:border-blue-900 flex flex-col justify-center items-center ${
-                isFlipped ? 'invisible' : ''
-              }`}
-              style={{ backfaceVisibility: 'hidden' }}
+            <motion.div
+              className="absolute inset-0 bg-white dark:bg-[#152850] rounded-2xl shadow-2xl p-8 md:p-12 border-2 border-blue-200 dark:border-blue-900 flex flex-col justify-center items-center"
+              style={{ 
+                backfaceVisibility: 'hidden',
+                WebkitBackfaceVisibility: 'hidden',
+                willChange: 'transform',
+                minHeight: '400px'
+              }}
             >
               <div className="mb-6 text-center">
                 <span className="text-sm text-blue-600 dark:text-teal-300 font-semibold uppercase tracking-wide">
@@ -153,18 +187,19 @@ export default function LearnModeCard({
               </p>
 
               <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
-                Click to reveal answer
+                Click or press <kbd className="px-2 py-1 bg-gray-200 dark:bg-slate-700 rounded">Space</kbd> to flip
               </p>
-            </div>
+            </motion.div>
 
             {/* Back of card (Answer) */}
-            <div
-              className={`absolute inset-0 bg-gradient-to-br from-blue-500 to-purple-500 dark:from-teal-600 dark:to-blue-700 rounded-2xl shadow-2xl p-8 md:p-12 border-2 border-blue-300 dark:border-teal-700 flex flex-col justify-center items-center ${
-                !isFlipped ? 'invisible' : ''
-              }`}
+            <motion.div
+              className="absolute inset-0 bg-gradient-to-br from-blue-500 to-purple-500 dark:from-teal-600 dark:to-blue-700 rounded-2xl shadow-2xl p-8 md:p-12 border-2 border-blue-300 dark:border-teal-700 flex flex-col justify-center items-center"
               style={{ 
                 backfaceVisibility: 'hidden',
-                transform: 'rotateY(180deg)'
+                WebkitBackfaceVisibility: 'hidden',
+                transform: 'rotateY(180deg)',
+                willChange: 'transform',
+                minHeight: '400px'
               }}
             >
               <div className="mb-6 text-center">
@@ -180,41 +215,56 @@ export default function LearnModeCard({
               <p className="text-sm text-white/80 text-center">
                 Did you get it right?
               </p>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         </div>
 
         {/* Right/Wrong Buttons (only show when flipped) */}
-        {isFlipped && (
-          <div className="flex gap-4 mb-6 animate-fadeIn">
-            <button
-              onClick={() => handleAnswer(false)}
-              disabled={isProcessing}
-              className="flex-1 bg-red-500 hover:bg-red-600 disabled:bg-red-400 text-white font-bold py-6 px-8 rounded-xl transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-3 text-lg"
+        <AnimatePresence>
+          {isFlipped && (
+            <motion.div 
+              className="flex gap-4 mb-6"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.2 }}
             >
-              <span className="text-2xl">❌</span>
-              <div className="text-left">
-                <div>Wrong</div>
-                <div className="text-xs opacity-80">← or Left Arrow</div>
-              </div>
-            </button>
-            
-            <button
-              onClick={() => handleAnswer(true)}
-              disabled={isProcessing}
-              className="flex-1 bg-green-500 hover:bg-green-600 disabled:bg-green-400 text-white font-bold py-6 px-8 rounded-xl transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-3 text-lg"
-            >
-              <div className="text-right">
-                <div>Right</div>
-                <div className="text-xs opacity-80">→ or Right Arrow</div>
-              </div>
-              <span className="text-2xl">✅</span>
-            </button>
-          </div>
-        )}
+              <motion.button
+                onClick={() => handleAnswer(false)}
+                disabled={isProcessing}
+                className="flex-1 bg-red-500 hover:bg-red-600 disabled:bg-red-400 disabled:cursor-not-allowed text-white font-bold py-6 px-8 rounded-xl shadow-lg hover:shadow-xl flex items-center justify-center gap-3 text-lg"
+                whileHover={{ scale: isProcessing ? 1 : 1.02 }}
+                whileTap={{ scale: isProcessing ? 1 : 0.98 }}
+              >
+                <div className="text-left">
+                  <div className="text-red-100 font-semibold">Incorrect</div>
+                  <div className="text-xs text-red-200 opacity-80">← or Left Arrow</div>
+                </div>
+              </motion.button>
+              
+              <motion.button
+                onClick={() => handleAnswer(true)}
+                disabled={isProcessing}
+                className="flex-1 bg-green-500 hover:bg-green-600 disabled:bg-green-400 disabled:cursor-not-allowed text-white font-bold py-6 px-8 rounded-xl shadow-lg hover:shadow-xl flex items-center justify-center gap-3 text-lg"
+                whileHover={{ scale: isProcessing ? 1 : 1.02 }}
+                whileTap={{ scale: isProcessing ? 1 : 0.98 }}
+              >
+                <div className="text-right">
+                  <div className="text-green-100 font-semibold">Correct</div>
+                  <div className="text-xs text-green-200 opacity-80">→ or Right Arrow</div>
+                </div>
+              </motion.button>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Encouragement */}
-        <div className="flex items-center justify-between">
+        <motion.div 
+          className="flex items-center justify-between"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2 }}
+        >
           <div className="flex items-center gap-3">
             <CorgiMascot size={50} />
             <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -228,7 +278,7 @@ export default function LearnModeCard({
               'One more correct!'
             )}
           </p>
-        </div>
+        </motion.div>
       </div>
     </div>
   );

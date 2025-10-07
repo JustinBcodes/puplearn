@@ -1,5 +1,6 @@
 'use client';
 
+import { motion } from 'framer-motion';
 import Link from 'next/link';
 import CorgiMascot from './CorgiMascot';
 
@@ -32,24 +33,40 @@ export default function LearnComplete({
 
   const getCorgiMessage = () => {
     if (accuracy >= 90) {
-      return "Pawsome job! 🐶 You're really fetching knowledge!";
+      return "Pawsome job! You're really fetching knowledge!";
     } else if (accuracy >= 80) {
-      return "Great work! 🐾 You're on the right track!";
+      return "Great work! You're on the right track!";
     } else if (accuracy >= 70) {
-      return "Good effort! 🐕 Keep practicing and you'll get there!";
+      return "Good effort! Keep practicing and you'll get there!";
     } else {
-      return "Don't worry, I'll help you chase down those tough ones! 🐾";
+      return "Don't worry, I'll help you chase down those tough ones!";
     }
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 dark:from-[#0a1128] dark:to-[#0a1128] flex items-center justify-center p-4">
-      <div className="max-w-2xl w-full bg-white dark:bg-[#152850] rounded-2xl shadow-2xl p-8 md:p-12 text-center border border-blue-200 dark:border-blue-900">
-        <CorgiMascot size={150} className="mx-auto mb-6 animate-bounce" />
+      <motion.div 
+        className="max-w-2xl w-full bg-white dark:bg-[#152850] rounded-2xl shadow-2xl p-8 md:p-12 text-center border border-blue-200 dark:border-blue-900"
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.3 }}
+      >
+        <motion.div
+          initial={{ y: -50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.1 }}
+        >
+          <CorgiMascot size={150} className="mx-auto mb-6" />
+        </motion.div>
         
-        <h1 className="text-3xl md:text-4xl font-bold text-gray-800 dark:text-gray-100 mb-4">
-          🎉 You&apos;ve Mastered This Set!
-        </h1>
+        <motion.h1 
+          className="text-3xl md:text-4xl font-bold text-gray-800 dark:text-gray-100 mb-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2 }}
+        >
+          You&apos;ve Mastered This Set!
+        </motion.h1>
         
         <p className="text-lg md:text-xl text-gray-600 dark:text-gray-300 mb-8">
           You completed <span className="font-bold text-blue-600 dark:text-teal-400">{totalCards}</span> flashcards from{' '}
@@ -103,40 +120,57 @@ export default function LearnComplete({
           </p>
         </div>
 
-        <div className="space-y-3">
+        <motion.div 
+          className="space-y-3"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
           {hasWrongCards && (
-            <button
+            <motion.button
               onClick={onReviewWrong}
               className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-semibold py-4 px-8 rounded-lg transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
             >
-              <span className="text-xl">🔁</span>
               <span>Relearn Mistakes ({wrongCardIds.length} cards)</span>
-            </button>
+            </motion.button>
           )}
 
-          <button
+          <motion.button
             onClick={onRestart}
             className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white font-semibold py-4 px-8 rounded-lg transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
           >
-            <span className="text-xl">🔄</span>
             <span>Start New Session</span>
-          </button>
+          </motion.button>
 
           <Link
             href="/dashboard"
-            className="w-full bg-gray-200 dark:bg-slate-700 hover:bg-gray-300 dark:hover:bg-slate-600 text-gray-800 dark:text-slate-100 font-semibold py-4 px-8 rounded-lg transition-colors shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+            className="w-full bg-gray-200 dark:bg-slate-700 hover:bg-gray-300 dark:hover:bg-slate-600 text-gray-800 dark:text-slate-100 font-semibold py-4 px-8 rounded-lg transition-colors shadow-md hover:shadow-lg flex items-center justify-center gap-2 inline-block"
           >
-            <span className="text-xl">🏠</span>
-            <span>Return to Dashboard</span>
+            <motion.span
+              className="block"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              Return to Dashboard
+            </motion.span>
           </Link>
-        </div>
+        </motion.div>
 
         {hasWrongCards && (
-          <p className="mt-6 text-sm text-gray-500 dark:text-gray-400">
-            💡 Tip: Relearn your mistakes to build stronger memory connections!
-          </p>
+          <motion.p 
+            className="mt-6 text-sm text-gray-500 dark:text-gray-400"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4 }}
+          >
+            Tip: Relearn your mistakes to build stronger memory connections!
+          </motion.p>
         )}
-      </div>
+      </motion.div>
     </div>
   );
 }
